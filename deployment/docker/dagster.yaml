@@ -1,0 +1,73 @@
+---
+run_coordinator:
+    class: QueuedRunCoordinator
+    module: dagster.core.run_coordinator
+    config:
+        max_concurrent_runs: 25
+        tag_concurrency_limits:
+          - key: concurrency_limit
+            value: '1'
+            limit: 1
+          - key: concurrency_limit
+            value: '2'
+            limit: 2
+          - key: concurrency_limit
+            value: '3'
+            limit: 3
+          - key: concurrency_limit
+            value: '4'
+            limit: 4
+          - key: concurrency_limit
+            value: '5'
+            limit: 5
+          - key: concurrency_limit
+            value: '6'
+            limit: 6
+          - key: concurrency_limit
+            value: '7'
+            limit: 7
+          - key: concurrency_limit
+            value: '8'
+            limit: 8
+          - key: concurrency_limit
+            value: '9'
+            limit: 9
+          - key: concurrency_limit
+            value: '10'
+            limit: 10
+          - key: concurrency_limit
+            value: '25'
+            limit: 25
+
+run_monitoring:
+    enabled: true
+    max_runtime_seconds: 14400
+
+storage:
+    postgres:
+        postgres_db:
+            username:
+                env: DAGSTER_POSTGRES_USER
+            password:
+                env: DAGSTER_POSTGRES_PASSWORD
+            hostname:
+                env: DAGSTER_POSTGRES_HOST
+            db_name:
+                env: DAGSTER_POSTGRES_NAME
+            port:
+                env: DAGSTER_POSTGRES_PORT
+
+telemetry:
+    enabled: false
+
+retention:
+    schedule:
+        purge_after_days: 30
+    sensor:
+        purge_after_days:
+            skipped: 7
+            failure: 7
+            success: 7
+
+auto_materialize:
+    enabled: true

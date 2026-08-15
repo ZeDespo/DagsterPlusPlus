@@ -22,4 +22,5 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "dagster-dg-cli>=1.13.18",
+    "pre-commit>=4.6.2",
 ]

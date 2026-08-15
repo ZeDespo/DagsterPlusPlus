@@ -1,0 +1,48 @@
+---
+repos:
+  # Enforce end of files, remove trailing whitespaces
+  - repo: local
+    hooks:
+      - id: ruff-lint
+        name: lint
+        entry: ruff check --exit-non-zero-on-fix --show-fixes --config pyproject.toml
+        language: system
+        types:
+          - python
+        exclude: ^tests/
+      - id: ruff-fmt
+        name: format
+        entry: ruff format --config pyproject.toml
+        language: system
+        types:
+          - python
+      - id: dagster-check-defs
+        name: dagster-check-defs
+        entry: task
+        args:
+          - dev:check-dagster-defs
+        language: system
+        pass_filenames: false
+        types:
+          - python
+      # - id: run-unit-tests
+      #   name: run-tests
+      #   entry: task
+      #   args:
+      #     - dev:test
+      #   language: system
+      #   pass_filenames: false
+      #   types:
+      #     - python
+      #   stages:
+      #     - commit
+      # - id: update-version-in-env-files
+      #   name: update-version-in-env-files
+      #   entry: task
+      #   args:
+      #     - git:update-version
+      #   language: system
+      #   pass_filenames: false
+      #   files: pyproject.toml
+      #   stages:
+      #     - commit

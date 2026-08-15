@@ -1,0 +1,54 @@
+---
+version: '3'
+
+vars:
+    PROJECT:
+      sh: basename $PWD
+
+includes:
+    dev: ./taskfiles/dev.Taskfile.yml
+    docker: ./taskfiles/docker.Taskfile.yml
+    git: ./taskfiles/git.Taskfile.yml
+
+tasks:
+    install:
+        cmds:
+          - task: dev:env
+            vars:
+                VENV: '{{.PROJECT}}'
+          - pyenv local {{.PROJECT}}
+          - task: dev:install
+          - task: update-files-with-project-name
+            vars:
+                PROJECT: '{{.PROJECT}}'
+          - task: make-env-files
+        desc: >-
+            Create a new SIP project with a unique python virtual environment. By default,
+            the new python venv will be named after the basename of the current working
+            directory.
+    make-env-files:
+        cmds:
+          - cp .env.template deployment/docker/.env
+          - cp .env.template deployment/local/.env
+          - sed -i '' "s/DAGSTER_POSTGRES_HOST.*/DAGSTER_POSTGRES_HOST=0.0.0.0/" deployment/local/.env
+          - sed -i '' "s/DAGSTER_REDIS_HOST.*/DAGSTER_REDIS_HOST=0.0.0.0/" deployment/local/.env
+          - sed -i '' "s/DAGSTER_RABBITMQ_HOST.*/DAGSTER_RABBITMQ_HOST=0.0.0.0/" deployment/local/.env
+          - sed -i '' "s/DAGSTER_HOME.*/DAGSTER_HOME={{.PWD}}\/deployment\/local/" deployment/local/.env
+          - sed -i '' "s/DAGSTER_FILESYSTEM_MOUNT.*/DAGSTER_FILESYSTEM_MOUNT={{.PWD}}\/deployment\/local\/filesystem_mount/"
+            deployment/local/.env
+          - sed -i '' "s/DAGSTER_/export DAGSTER_/" deployment/local/.env
+        desc: Create .env files for all deployments from the template files.
+        vars:
+            PWD:
+                sh: echo $PWD | sed 's/\//\\\//g'
+    update-files-with-project-name:
+        cmds:
+          - sed -i '' 's/SIP_IMAGE=nexus.eigen.live\/sip/SIP_IMAGE=nexus.eigen.live\/{{.PROJECT}}/g'
+            .env.template
+          - sed -i '' 's/name = \"sip\"/name = \"{{.PROJECT}}\"/g' pyproject.toml
+          - "sed -i '' 's/IMAGE_NAME: sip/IMAGE_NAME: {{.PROJECT}}/g' .gitlab-ci.yml"
+        desc: Replace template project name with the current project name.
+        status:
+          - cat .env.template | grep 'SIP_IMAGE=nexus.eigen.live/{{.PROJECT}}'
+          - cat pyproject.toml | grep '{{.PROJECT}}'
+          - cat .gitlab-ci.yml | grep '{{.PROJECT}}'

@@ -1,0 +1,84 @@
+---
+version: '3.7'
+
+services:
+    grpc:
+        image: nexus.eigen.live/scb-sip-dev:0.0.0
+        container_name: grpc-sip  # needs to match workspace.yml
+        user: $UID:$GID
+        restart: unless-stopped
+        env_file:
+          - .env
+        environment:
+            DAGSTER_HOME: /opt/dagster/sip
+            DAGSTER_FILESYSTEM_MOUNT: /opt/filesystem_mount
+            DAGSTER_POSTGRES_HOST: postgres-sip-dev
+        entrypoint: /entrypoints/grpc.sh
+        volumes:
+          - /tmp/sip/io_manager_storage:/tmp/io_manager_storage
+          - ./filesystem_mount:/opt/filesystem_mount
+        networks:
+          - sip-network
+        healthcheck:
+            test: dagster api grpc-health-check -p 4000 || exit 1
+            interval: 30s
+            timeout: 20s
+            retries: 5
+            start_period: 15s
+    web:
+        image: nexus.eigen.live/scb-sip-dev:0.0.0
+        user: $UID:$GID
+        container_name: web-sip-dev
+        restart: unless-stopped
+        depends_on:
+          - grpc
+        env_file:
+          - .env
+        environment:
+            DAGSTER_HOME: /opt/dagster/sip
+            DAGSTER_FILESYSTEM_MOUNT: /opt/filesystem_mount
+            DAGSTER_POSTGRES_HOST: postgres-sip-dev
+        entrypoint: /entrypoints/web.sh
+        volumes:
+          - /tmp/sip/io_manager_storage:/tmp/io_manager_storage
+          - ./filesystem_mount:/opt/filesystem_mount
+        ports:
+          - ${DAGSTER_WEBSERVER_PORT}:3001
+        networks:
+          - sip-network
+        healthcheck:
+            test: curl -I --fail http://localhost:3001/server_info || exit 1
+            interval: 30s
+            timeout: 20s
+            retries: 5
+            start_period: 15s
+    daemon:
+        image: nexus.eigen.live/scb-sip-dev:0.0.0
+        user: $UID:$GID
+        container_name: daemon-sip-dev
+        restart: unless-stopped
+        depends_on:
+          - grpc
+        env_file:
+          - .env
+        environment:
+            DAGSTER_HOME: /opt/dagster/sip
+            DAGSTER_FILESYSTEM_MOUNT: /opt/filesystem_mount
+            DAGSTER_POSTGRES_HOST: postgres-sip-dev
+        entrypoint: /entrypoints/daemon.sh
+        volumes:
+          - /tmp/sip/io_manager_storage:/tmp/io_manager_storage
+          - ./filesystem_mount:/opt/filesystem_mount
+        networks:
+          - sip-network
+        healthcheck:
+            test: dagster-daemon liveness-check || exit 1
+            interval: 30s
+            timeout: 20s
+            retries: 5
+            start_period: 15s
+
+networks:
+    sip-network:
+        external: true
+        name: sip-network

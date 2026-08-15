@@ -1,0 +1,5 @@
+---
+execution:
+  config:
+    broker: pyamqp://sip:sipwithconcurrencyisprettysweet@0.0.0.0:5672/dagster-broker  # Use the broker container hostname
+    backend: rpc://  # Or use a different backend like Redis

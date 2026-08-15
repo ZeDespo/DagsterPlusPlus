@@ -1,0 +1,77 @@
+---
+version: '3'
+
+includes:
+    docker: docker.Taskfile.yml
+
+vars:
+    SRC: sip
+    TEST_SRC: tests
+    PYTHON_VERSION: 3.14
+    PYENV_ACTIVATE: $PYENV_ROOT/versions/$(cat .python-version)/bin/activate
+
+tasks:
+    check-dagster-defs:
+        cmds:
+          - task: docker:start-local-services
+          - defer:
+                task: docker:stop-local-services
+          - dg check defs --target-path sip/repo.py --log-level debug
+        desc: Validate the assets, sensors, jobs, etc in a Dagster deployment.
+    docs:
+        cmds:
+          - sphinx-build . _build -b html
+          - open _build/index.html
+        desc: Build a local version of the sphinx documentation then opens it.
+        dir: documentation/
+        deps:
+          - install
+    get-uv:
+        cmd: curl -LsSf https://astral.sh/uv/install.sh | sh
+        desc: Download and install UV, the package manager.
+        status:
+          - which uv
+          - which uvx
+    venv:
+        cmds:
+          - uv python install {{.PYTHON_VERSION}}
+          - uv venv --python {{.PYTHON_VERSION}}
+        desc: Install uv, get the py python version to run the virtualenv.
+        status:
+          - ls .venv
+    install:
+        cmds:
+          - task: get-uv
+          - task: venv
+          - task: uv
+          - task: pre-commit
+        desc: Create the virtual environment and install dependencies.
+    pre-commit:
+        cmd: uv run pre-commit install -t pre-commit -t commit-msg
+        desc: Install pre-commit hooks
+    run:
+        cmds:
+          - task: docker:start-local-services
+          - defer:
+                task: docker:stop-local-services
+          - dg dev -w deployment/local/workspace.yaml
+        desc: Start the dagster development server
+        dotenv:
+          - deployment/local/.env
+    uv:
+        cmd: uv sync --all-extras
+        desc: Install all python dependencies with uv
+    test:
+        cmd: pytest tests/unit {{.CLI_ARGS}}
+        desc: Run tests
+        dotenv:
+          - deployment/local/.env
+    test-integration:
+        cmds:
+          - task: docker:start-local-services
+          - defer:
+                task: docker:stop-local-services
+          - pytest tests/integration {{.CLI_ARGS}}
+        desc: Run tests that depend on other resources.
+        dotenv:
+          - deployment/local/.env
