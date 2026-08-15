@@ -3,7 +3,7 @@ version: '3'
 
 vars:
     PROJECT:
-      sh: basename $PWD
+        sh: basename $PWD
 
 includes:
     dev: ./taskfiles/dev.Taskfile.yml

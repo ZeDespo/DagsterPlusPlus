@@ -5,10 +5,7 @@ includes:
     docker: docker.Taskfile.yml
 
 vars:
-    SRC: sip
-    TEST_SRC: tests
     PYTHON_VERSION: 3.14
-    PYENV_ACTIVATE: $PYENV_ROOT/versions/$(cat .python-version)/bin/activate
 
 tasks:
     check-dagster-defs:
@@ -46,6 +43,11 @@ tasks:
           - task: uv
           - task: pre-commit
         desc: Create the virtual environment and install dependencies.
+    new-project:
+        cmd: uv run create-dagster project {{.PROJECT}}
+        desc: Create a new dagster project if it does not exist already.
+        status:
+          - ls {{.PROJECT}}
     pre-commit:
         cmd: uv run pre-commit install -t pre-commit -t commit-msg
         desc: Install pre-commit hooks
