@@ -1,11 +1,11 @@
 ---
-name: dev-sip
+name: dev-dag
 
 services:
     # The postgres DB used by Dagster for run storage, schedule storage, and event log storage.
     postgres:
-        image: nexus.eigen.live/bitnami/postgresql:15.5.0-debian-11-r18
-        container_name: postgres-sip-dev
+        image: docker.io/bitnami/postgresql
+        container_name: postgres-dag-dev
         restart: unless-stopped
         environment:
             POSTGRES_USER: ${DAGSTER_POSTGRES_USER:?.env not set up correctly}
@@ -15,9 +15,9 @@ services:
         ports:
           - 5432:5432
         networks:
-          - sip-network
+          - dag-network
 
 networks:
-    sip-network:
+    dag-network:
         driver: bridge
-        name: sip-network
+        name: dag-network

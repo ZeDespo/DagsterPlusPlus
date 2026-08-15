@@ -49,8 +49,8 @@ tasks:
                 sh: uv version --short
     update-version:
         cmds:
-          - sed -i '' "s/SIP_VERSION.*/SIP_VERSION={{.VERSION}}/" .env.template
-          - find deployment/docker -name "*.env" | xargs sed -i '' "s/SIP_VERSION.*/SIP_VERSION={{.VERSION}}/"
+          - sed -i '' "s/DOCKER_VERSION.*/DOCKER_VERSION={{.VERSION}}/" .env.template
+          - find deployment/docker -name "*.env" | xargs sed -i '' "s/DOCKER_VERSION.*/DOCKER_VERSION={{.VERSION}}/"
         desc: Keep the .env files consistent with the version found in `pyproject.toml`. You
             will rarely call this yourself, should be handled by a pre-commit hook.
         vars:

@@ -5,7 +5,7 @@ vars:
     DEPLOYMENT_DIR: ./deployment/docker
     HOST: '{{.HOST | default "UNKNOWN_HOST"}}'
     DEV_IMAGE: nexus.eigen.live/{{.PROJECT}}-dev:0.0.0
-    REMOTE_SIP_DIRECTORY: /home/ubuntu/sip
+    REMOTE_DOCKER_DIRECTORY: /home/ubuntu/sip
     REMOTE_HOST: ubuntu@{{.HOST}}
 
 tasks:
@@ -16,9 +16,9 @@ tasks:
         desc: Build a developer image.
     deploy:
         cmds:
-          - tsh scp {dagster.yaml,docker-compose.yml} '{{.REMOTE_HOST}}:{{.REMOTE_SIP_DIRECTORY}}'
-          - tsh scp {{.HOST}}.env '{{.REMOTE_HOST}}:{{.REMOTE_SIP_DIRECTORY}}/.env'
-          - tsh ssh {{.REMOTE_HOST}} 'cd {{.REMOTE_SIP_DIRECTORY}} && docker compose down
+          - tsh scp {dagster.yaml,docker-compose.yml} '{{.REMOTE_HOST}}:{{.REMOTE_DOCKER_DIRECTORY}}'
+          - tsh scp {{.HOST}}.env '{{.REMOTE_HOST}}:{{.REMOTE_DOCKER_DIRECTORY}}/.env'
+          - tsh ssh {{.REMOTE_HOST}} 'cd {{.REMOTE_DOCKER_DIRECTORY}} && docker compose down
             && docker compose pull && docker compose up -d'
         desc: Deploy the docker deployment files, along with the .env file corresponding with
             the host specified.
@@ -43,8 +43,8 @@ tasks:
         cmds:
           - task: build-dev
           - task: push-dev
-          - tsh scp deployment/docker/{{.HOST}}.routing_config.yml {{.REMOTE_HOST}}:{{.REMOTE_SIP_DIRECTORY}}/filesystem_mount/routing_config.yml
-          - tsh ssh {{.REMOTE_HOST}} 'cd {{.REMOTE_SIP_DIRECTORY}} && docker compose down
+          - tsh scp deployment/docker/{{.HOST}}.routing_config.yml {{.REMOTE_HOST}}:{{.REMOTE_DOCKER_DIRECTORY}}/filesystem_mount/routing_config.yml
+          - tsh ssh {{.REMOTE_HOST}} 'cd {{.REMOTE_DOCKER_DIRECTORY}} && docker compose down
             && docker compose pull && docker compose up -d'
         desc: Build a new developer image, push to your dev machine, and run it.
     start-local-services:

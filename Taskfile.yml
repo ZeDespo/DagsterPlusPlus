@@ -43,12 +43,12 @@ tasks:
                 sh: echo $PWD | sed 's/\//\\\//g'
     update-files-with-project-name:
         cmds:
-          - sed -i '' 's/SIP_IMAGE=nexus.eigen.live\/sip/SIP_IMAGE=nexus.eigen.live\/{{.PROJECT}}/g'
+          - sed -i '' 's/DOCKER_IMAGE=nexus.eigen.live\/sip/DOCKER_IMAGE=nexus.eigen.live\/{{.PROJECT}}/g'
             .env.template
           - sed -i '' 's/name = \"sip\"/name = \"{{.PROJECT}}\"/g' pyproject.toml
           - "sed -i '' 's/IMAGE_NAME: sip/IMAGE_NAME: {{.PROJECT}}/g' .gitlab-ci.yml"
         desc: Replace template project name with the current project name.
         status:
-          - cat .env.template | grep 'SIP_IMAGE=nexus.eigen.live/{{.PROJECT}}'
+          - cat .env.template | grep 'DOCKER_IMAGE=nexus.eigen.live/{{.PROJECT}}'
           - cat pyproject.toml | grep '{{.PROJECT}}'
           - cat .gitlab-ci.yml | grep '{{.PROJECT}}'

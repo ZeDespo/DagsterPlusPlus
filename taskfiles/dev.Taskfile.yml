@@ -56,7 +56,7 @@ tasks:
           - task: docker:start-local-services
           - defer:
                 task: docker:stop-local-services
-          - dg dev -w deployment/local/workspace.yaml
+          - DAGSTER_HOME=$PWD/deployment/local dg dev -w deployment/local/workspace.yaml
         desc: Start the dagster development server
         dotenv:
           - deployment/local/.env

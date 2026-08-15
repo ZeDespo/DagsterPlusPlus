@@ -22,7 +22,7 @@ services:
         security_opt:
           - no-new-privileges
     grpc:
-        image: ${SIP_IMAGE}:$SIP_VERSION
+        image: ${DOCKER_IMAGE}:$DOCKER_VERSION
         container_name: grpc-sip
         depends_on:
           - postgres
@@ -39,7 +39,7 @@ services:
             retries: 5
             start_period: 15s
     web:
-        image: ${SIP_IMAGE}:${SIP_VERSION}
+        image: ${DOCKER_IMAGE}:${DOCKER_VERSION}
         container_name: web-sip
         restart: unless-stopped
         env_file:
@@ -62,7 +62,7 @@ services:
             retries: 5
             start_period: 15s
     daemon:
-        image: ${SIP_IMAGE}:${SIP_VERSION}
+        image: ${DOCKER_IMAGE}:${DOCKER_VERSION}
         container_name: daemon-sip
         restart: unless-stopped
         env_file:
