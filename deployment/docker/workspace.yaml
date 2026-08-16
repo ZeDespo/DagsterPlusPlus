@@ -1,7 +1,0 @@
----
-# This file defines the dagster workspace.
-load_from:
-  - grpc_server:
-      host: grpc-sip
-      port: 4000
-      location_name: internal

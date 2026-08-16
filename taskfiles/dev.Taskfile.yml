@@ -13,8 +13,10 @@ tasks:
           - task: docker:start-local-services
           - defer:
                 task: docker:stop-local-services
-          - dg check defs --target-path sip/repo.py --log-level debug
+          - dg check defs --log-level debug
         desc: Validate the assets, sensors, jobs, etc in a Dagster deployment.
+        dotenv:
+          - deployment/local/.env
     docs:
         cmds:
           - sphinx-build . _build -b html

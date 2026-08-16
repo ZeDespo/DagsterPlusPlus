@@ -11,21 +11,6 @@ includes:
     git: ./taskfiles/git.Taskfile.yml
 
 tasks:
-    install:
-        cmds:
-          - task: dev:env
-            vars:
-                VENV: '{{.PROJECT}}'
-          - pyenv local {{.PROJECT}}
-          - task: dev:install
-          - task: update-files-with-project-name
-            vars:
-                PROJECT: '{{.PROJECT}}'
-          - task: make-env-files
-        desc: >-
-            Create a new SIP project with a unique python virtual environment. By default,
-            the new python venv will be named after the basename of the current working
-            directory.
     make-env-files:
         cmds:
           - cp .env.template deployment/docker/.env
@@ -41,14 +26,3 @@ tasks:
         vars:
             PWD:
                 sh: echo $PWD | sed 's/\//\\\//g'
-    update-files-with-project-name:
-        cmds:
-          - sed -i '' 's/DOCKER_IMAGE=nexus.eigen.live\/sip/DOCKER_IMAGE=nexus.eigen.live\/{{.PROJECT}}/g'
-            .env.template
-          - sed -i '' 's/name = \"sip\"/name = \"{{.PROJECT}}\"/g' pyproject.toml
-          - "sed -i '' 's/IMAGE_NAME: sip/IMAGE_NAME: {{.PROJECT}}/g' .gitlab-ci.yml"
-        desc: Replace template project name with the current project name.
-        status:
-          - cat .env.template | grep 'DOCKER_IMAGE=nexus.eigen.live/{{.PROJECT}}'
-          - cat pyproject.toml | grep '{{.PROJECT}}'
-          - cat .gitlab-ci.yml | grep '{{.PROJECT}}'
