@@ -1,5 +1,0 @@
----
-# This file defines the dagster workspace.
-load_from:
-  - python_file:
-        relative_path: ../../src/dagster_eigen/definitions.py

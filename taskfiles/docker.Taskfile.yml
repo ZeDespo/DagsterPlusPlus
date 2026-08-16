@@ -10,7 +10,7 @@ vars:
 
 tasks:
     build-dev:
-        cmd: docker build --platform linux/amd64 --build-arg NEXUS_TOKEN_NAME=${NEXUS_TOKEN_NAME}
+        cmd: sudo docker build --platform linux/amd64 --build-arg NEXUS_TOKEN_NAME=${NEXUS_TOKEN_NAME}
             --build-arg NEXUS_TOKEN_SECRET=${NEXUS_TOKEN_SECRET} --build-arg REGISTRY=nexus.eigen.live/
             --tag {{.DEV_IMAGE}} .
         desc: Build a developer image.
@@ -18,8 +18,8 @@ tasks:
         cmds:
           - tsh scp {dagster.yaml,docker-compose.yml} '{{.REMOTE_HOST}}:{{.REMOTE_DOCKER_DIRECTORY}}'
           - tsh scp {{.HOST}}.env '{{.REMOTE_HOST}}:{{.REMOTE_DOCKER_DIRECTORY}}/.env'
-          - tsh ssh {{.REMOTE_HOST}} 'cd {{.REMOTE_DOCKER_DIRECTORY}} && docker compose down
-            && docker compose pull && docker compose up -d'
+          - tsh ssh {{.REMOTE_HOST}} 'cd {{.REMOTE_DOCKER_DIRECTORY}} && sudo docker compose
+            down && sudo docker compose pull && sudo docker compose up -d'
         desc: Deploy the docker deployment files, along with the .env file corresponding with
             the host specified.
         preconditions:
@@ -28,28 +28,28 @@ tasks:
                 you can transfer to teleport instance '{{.HOST}}'
         dir: '{{.DEPLOYMENT_DIR}}'
     push-dev:
-        cmd: docker push {{.DEV_IMAGE}}
+        cmd: sudo docker push {{.DEV_IMAGE}}
     run-dev-prototype:
         cmds:
           - task: build-dev
           - task: start-local-services
           - defer:
                 task: stop-local-services
-          - defer: docker compose down
-          - defer: docker compose -f docker-compose.dev.yml down
-          - docker compose -f docker-compose.dev.yml up
+          - defer: sudo docker compose down
+          - defer: sudo docker compose -f docker-compose.dev.yml down
+          - sudo docker compose -f docker-compose.dev.yml up
         dir: deployment/local
     run-remote-prototype:
         cmds:
           - task: build-dev
           - task: push-dev
           - tsh scp deployment/docker/{{.HOST}}.routing_config.yml {{.REMOTE_HOST}}:{{.REMOTE_DOCKER_DIRECTORY}}/filesystem_mount/routing_config.yml
-          - tsh ssh {{.REMOTE_HOST}} 'cd {{.REMOTE_DOCKER_DIRECTORY}} && docker compose down
-            && docker compose pull && docker compose up -d'
+          - tsh ssh {{.REMOTE_HOST}} 'cd {{.REMOTE_DOCKER_DIRECTORY}} && sudo docker compose
+            down && sudo docker compose pull && sudo docker compose up -d'
         desc: Build a new developer image, push to your dev machine, and run it.
     start-local-services:
-        cmd: docker compose -f deployment/local/docker-compose.yml up -d --wait
+        cmd: sudo docker compose -f deployment/local/docker-compose.yml up -d --wait
         desc: Start the necessary services to run a local version of dagster.
     stop-local-services:
-        cmd: docker compose -f deployment/local/docker-compose.yml down
+        cmd: sudo docker compose -f deployment/local/docker-compose.yml down
         desc: Stop all docker services for a local dagster deployment.
