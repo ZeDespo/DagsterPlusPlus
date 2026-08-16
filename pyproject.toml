@@ -1,5 +1,5 @@
 [project]
-name = "dagster_eigen"
+name = "dagster_plus_plus"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-dagster-eigen = "dagster_eigen:main"
+dagster-eigen = "dagster_plus_plus:main"
 
 [dependency-groups]
 dev = [
@@ -31,9 +31,9 @@ build-backend = "hatchling.build"
 directory_type = "project"
 
 [tool.dg.project]
-root_module = "dagster_eigen"
+root_module = "dagster_plus_plus"
 registry_modules = [
-  "dagster_eigen.components.*",
+  "dagster_plus_plus.components.*",
 ]
 
 [tool.hatch.build.targets.wheel]

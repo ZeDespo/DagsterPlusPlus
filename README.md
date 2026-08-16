@@ -1,4 +1,4 @@
-# dagster_eigen
+# dagster_plus_plus
 
 ## Getting started
 
