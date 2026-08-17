@@ -1,0 +1,10 @@
+---
+type: dagster_dbt.DbtProjectComponent
+template_vars_module: .template_vars
+
+attributes:
+    project: '{{ context.project_root }}/dbt'
+    # select: customers
+    translation:
+        group_name: '{{ group_by_stage(node.original_file_path) }}'
+        description: Transforms data using dbt model {{ node.name }}

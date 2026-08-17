@@ -6,11 +6,13 @@ readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
   "dagster>=1.13.18",
+  "dagster-dbt>=0.29.18",
   "dagster-docker>=0.29.18",
   "dagster-postgres>=0.29.18",
   "dagster-webserver>=1.13.18",
-  "dbt>=1.0.0.40.18",
-  "dbt-core>=1.11.13",
+  "dbt-duckdb>=1.11.0",
+  "dbt-postgres>=1.11.0",
+  "pandas>=3.0.5",
   "pdf2image>=1.17.0",
   "peewee>=4.3.0",
   "pendulum>=3.2.0",
