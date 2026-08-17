@@ -15,7 +15,7 @@ from dagster_plus_plus.core.data_store import (
     IODataStore,
     IOKey,
 )
-from dagster_plus_plus.defs.resources.postgres.models.core import (
+from dagster_plus_plus.core.postgres_models import (
     Cache,
     DagsterIOManagement,
 )
