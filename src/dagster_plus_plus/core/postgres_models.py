@@ -71,7 +71,7 @@ class Cache(DagPlusPlusBaseModel):
     value = peewee.CharField(max_length=1024)
 
 
-FileKeyGeneratorType: type = Path | str
+FileKeyGeneratorType = type[Path | str]
 """
 These are the supported types to generate the index key.
 """
@@ -83,6 +83,13 @@ def _extract_filename_from_object(file: FileKeyGeneratorType) -> str:
     if isinstance(file, str):
         return file
     raise TypeError(f"Unhandled type {type(file)} to convert to file key")
+
+
+def _make_file_key(file: FileKeyGeneratorType) -> str:
+    filename = _extract_filename_from_object(file)
+    filename = filename.replace(Path(filename).suffix, "")
+    filename = regex.sub(r"\s{2,}", " ", filename)
+    return regex.sub(r"[^a-zA-Z0-9]", "_", filename)
 
 
 class PipelineDocument(DagPlusPlusBaseModel):
@@ -140,51 +147,31 @@ class PipelineDocument(DagPlusPlusBaseModel):
         If you know the ``file_key`` value in advance, just use the base peewee
         ``get_or_none`` method instead.
         """
-        return cls.get_or_none(
-            cls.file_key == cls.make_file_key(file, remove_suffix=True)
-        )
+        return cls.get_or_none(cls.file_key == _make_file_key(file))
 
     @classmethod
     def get_or_create_document(
         cls,
         context: dag.AssetExecutionContext | dag.OpExecutionContext,
         file: FileKeyGeneratorType,
-        file_key_override: str = "",
     ) -> tuple[Self, bool]:
         """
         If we are unsure of whether the document was added mid-pipeline /
         with pre-existing metadata or not, we want an easy way to reference these things
         and provide answers on whether this document previously existed or not.
 
-        We can also use this method to do something incredibly evil: override the base
-        logic for generating a ``file_key`` object with our own, by directly passing 
-        it in.
-
         :param file: What to lookup in the database.
         :param file_key_override: If specified, you want to override the default \
         file key generation in favor of using this string. Be careful.
         :return: A tuple of the document and True if it was created, False if not
         """
-        file_key = file_key_override or cls.make_file_key(file, remove_suffix=True)
-        if document := cls.get_or_none(cls.file_key == file_key):
+        if document := cls.get_document_or_none(file):
             return document, False
         return cls.create(
-            file_key=file_key,
+            file_key=_make_file_key(file),
             original_filename=_extract_filename_from_object(file),
             partition_key=context.partition_key,
         ), True
-
-    @staticmethod
-    def make_file_key(file: FileKeyGeneratorType, remove_suffix: bool = True) -> str:
-        """
-        Creates the primary key for this model. Can use this in your implementation
-        to create a base primary key, so you can another row for the same original
-        filename.
-        """
-        filename = _extract_filename_from_object(file)
-        if remove_suffix:
-            filename = filename.replace(Path(filename).suffix, "")
-        return regex.sub(r"[^a-zA-Z0-9]", "_", filename)
 
     def update_metadata(self, **new_metadata) -> Self:
         """The same exact method as we would update two dicts."""

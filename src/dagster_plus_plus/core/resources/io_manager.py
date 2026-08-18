@@ -32,7 +32,8 @@ class DagPlusPlusIOManager(dag.IOManager):
 
         - Loading the output of a partitioned asset's values into a non-partitioned
           one by loading the values in as a sequence.
-        - Loading a partitioned-asset's values into a non-partitioned asset as a list object
+        - Loading a partitioned-asset's values into a
+          non-partitioned asset as a list object
     """
 
     data_store: IODataStore
@@ -110,7 +111,7 @@ class DagPlusPlusIOManager(dag.IOManager):
         if context.upstream_output.has_partition_key and "|" in key.partition_key:
             split_key = key.partition_key.split("|")
             context.log.debug(
-                f"Found 2D partition key, attempting to derive input from permutations of {split_key}"
+                f"Found 2D partition key, attempting to derive input from {split_key}"
             )
             inputs = [None, None]
             for i in range(2):
