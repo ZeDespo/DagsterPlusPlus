@@ -36,7 +36,6 @@ class PostgresqlResource(dag.ConfigurableResource):
     db_name: str = Field(default="dagster")
 
     def create_resource(self, _) -> PostgresqlExtDatabase:
-        """Make the thing."""
         return PostgresqlExtDatabase(
             self.db_name,
             user=self.username,
@@ -82,7 +81,7 @@ class PostgresCache(dag.ConfigurableResource, BasicDataStore):
 class PostgresIOManagerDataStoreResource(dag.ConfigurableResource, IODataStore):
     """To be used exclusively with the I/O manager"""
 
-    postgres: dag.ResourceDependency[PostgresqlExtDatabase]
+    postgres: dag.ResourceDependency[PostgresqlResource]
 
     @safe
     def read(self, key: IOKey) -> str:

@@ -15,18 +15,18 @@ from dagster_plus_plus.core.resources.postgres import (
 def core_definitions(
     executor: dag.Executor | dag.ExecutorDefinition | None = None,
 ) -> dag.Definitions:
-    """These are the definitions that SIP needs to run."""
-    postgres_resource = PostgresqlResource(
+    """These are the definitions that DagPlusPlus needs to run."""
+    postgres = PostgresqlResource(
         host=dag.EnvVar("DAGSTER_POSTGRES_HOST"),
         username=dag.EnvVar("DAGSTER_POSTGRES_USER"),
         password=dag.EnvVar("DAGSTER_POSTGRES_PASSWORD"),
     )
-    data_store = PostgresIOManagerDataStoreResource(postgres=postgres_resource)
     return dag.Definitions(
         resources={
-            "io_data_store": data_store,
-            "io_manager": DagPlusPlusIOManager(data_store=data_store),
-            "cache": PostgresCache(postgres=postgres_resource),
+            "io_manager": DagPlusPlusIOManager(
+                io_data_store=PostgresIOManagerDataStoreResource(postgres=postgres)
+            ),
+            "cache": PostgresCache(postgres=postgres),
         },
         executor=executor,
     )

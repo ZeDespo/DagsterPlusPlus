@@ -20,8 +20,7 @@ from dagster_plus_plus.core.data_store import (
 )
 
 
-@attrs.define
-class DagPlusPlusIOManager(dag.IOManager):
+class DagPlusPlusIOManager(dag.ConfigurableIOManager):
     """
     The Dagster IO manager utilizes a file based approach, which isn't very scalable
     if we're doing multiple concurrent runs. It's also extremely strict in terms of
@@ -36,7 +35,7 @@ class DagPlusPlusIOManager(dag.IOManager):
           non-partitioned asset as a list object
     """
 
-    data_store: IODataStore
+    io_data_store: dag.ResourceDependency[IODataStore]
 
     def _derive_key_for_loading_upstream_asset(
         self, context: dag.InputContext
@@ -133,7 +132,7 @@ class DagPlusPlusIOManager(dag.IOManager):
         return Nothing
 
     def _read_value_from_data_store(self, key: IOKey) -> ResultE[Any]:
-        get_result = self.data_store.read(key)
+        get_result = self.io_data_store.read(key)
         if encoded_string := get_result.value_or(None):
             return Success(decode_base64_string_to_object(encoded_string))
         return get_result  # Return the Failure object.
@@ -151,10 +150,14 @@ class DagPlusPlusIOManager(dag.IOManager):
                 key: value.value for key, value in context.output_metadata.items()
             }
         context.log.debug(f"Writing output to {key = }")
-        self.data_store.write(key, encode_object_to_base64_string(obj), metadata)
+        self.io_data_store.write(key, encode_object_to_base64_string(obj), metadata)
         context.log.debug(f"Written object: {obj}")
         if metadata:
             context.log.debug(f"With metdata: {metadata}")
+
+    # def setup_for_execution(self, context: dag.InitResourceContext):
+    #     """Call all self"""
+    #     self.io_data_store.setup_for_execution(context)
 
     def load_input(self, context: dag.InputContext) -> Any:
         """

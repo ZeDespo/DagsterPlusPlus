@@ -31,3 +31,13 @@ def raw_orders_loaded(
     duckdb_conn: dag.ResourceParam[duckdb.DuckDBPyConnection],
 ):
     return _create_table(context, duckdb_conn, "orders")
+
+
+@dag.asset
+def hello():
+    return "hello"
+
+
+@dag.asset
+def world(hello: str):
+    return f"{hello} world!"
