@@ -3,32 +3,43 @@
 import dagster as dag
 import duckdb
 from pydantic import Field, PrivateAttr
-from returns.result import safe
+from returns.io import IOResultE, impure_safe
 
 from dagster_plus_plus.core.data_store import (
-    BasicDataStore,
+    BasicCache,
 )
 
 
 class DuckDbResource(dag.ConfigurableResource):
     """Allows connection to some duckdb resource."""
 
-    path: str = Field(default=":memory:")
+    database: str = Field(default=":memory:")
     read_only: bool = Field(default=False)
 
     def create_resource(self, _) -> duckdb.DuckDBPyConnection:
         """Make the thing."""
-        return duckdb.connect(database=self.path, read_only=self.read_only)
+        return duckdb.connect(database=self.database, read_only=self.read_only)
 
 
-class DuckDbCache(dag.ConfigurableResource, BasicDataStore):
-    """A connection to some in-memory duckdb instance to act
-    as a cache"""
+class DuckDbCacheResource(dag.ConfigurableResource, BasicCache):
+    """An unlogged, temporary table to act as a cache across dagster runs."""
 
     connection: dag.ResourceDependency[duckdb.DuckDBPyConnection]
     _table_name: str = PrivateAttr(default="Cache")
 
-    @safe
+    def delete(self, key: str) -> None:
+        """Delete from the temp table."""
+        self.connection.sql(
+            f"DELETE FROM {self._table_name} WHERE key = {key}"
+        ).execute()
+
+    def pop(self, key: str) -> IOResultE[str]:
+        """Read, delete, then return the value."""
+        result = self.read(key)
+        result.map(lambda _: self.delete(key))
+        return result
+
+    @impure_safe
     def read(self, key: str) -> str:
         """Get cache by key value"""
         result = self.connection.sql(
@@ -47,8 +58,9 @@ class DuckDbCache(dag.ConfigurableResource, BasicDataStore):
             CREATE TEMP TABLE IF NOT EXISTS {self._table_name}
             (key VARCHAR PRIMARY KEY, value VARCHAR);
             """
-        ).execute()
+        )
 
+    @impure_safe
     def write(self, key: str, value: str):
         """Just writes to the cache."""
         self.connection.sql(

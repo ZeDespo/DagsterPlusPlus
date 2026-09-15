@@ -129,3 +129,15 @@ class BasicDataStore(abc.ABC):
     @abc.abstractmethod
     def write(self, key: str, *args, **kwargs) -> Any:
         """Simple set of the value."""
+
+
+@attrs.define
+class BasicCache(BasicDataStore, abc.ABC):
+    """
+    A class that inherits from this will be operating as a cache, which typically
+    means when the process dies, the table data will be lost.
+    """
+
+    @abc.abstractmethod
+    def pop(self, key: str) -> ResultE[Any]:
+        """Reads the key (if it exists), deletes it, then returns the value."""
