@@ -9,6 +9,7 @@ from typing import Any
 
 import attrs
 import dagster as dag
+from returns.io import IOResultE
 from returns.result import ResultE
 
 
@@ -123,12 +124,12 @@ class BasicDataStore(abc.ABC):
     """
 
     @abc.abstractmethod
-    def read(self, key: str) -> ResultE[Any]:
+    def read(self, key: str) -> IOResultE[Any]:
         """You should not need some overly complicated key."""
 
     @abc.abstractmethod
-    def write(self, key: str, *args, **kwargs) -> Any:
-        """Simple set of the value."""
+    def write(self, key: str, *args, **kwargs) -> None:
+        """Simply set the value to anything"""
 
 
 @attrs.define
@@ -139,5 +140,9 @@ class BasicCache(BasicDataStore, abc.ABC):
     """
 
     @abc.abstractmethod
-    def pop(self, key: str) -> ResultE[Any]:
+    def pop(self, key: str) -> IOResultE[Any]:
         """Reads the key (if it exists), deletes it, then returns the value."""
+
+    @abc.abstractmethod
+    def write(self, key: str, value: Any) -> None:
+        """Caches are simple. Writing should be too."""

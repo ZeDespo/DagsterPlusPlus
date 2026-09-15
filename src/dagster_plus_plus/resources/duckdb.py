@@ -27,23 +27,21 @@ class DuckDbCacheResource(dag.ConfigurableResource, BasicCache):
     connection: dag.ResourceDependency[duckdb.DuckDBPyConnection]
     _table_name: str = PrivateAttr(default="Cache")
 
-    def delete(self, key: str) -> None:
-        """Delete from the temp table."""
-        self.connection.sql(
-            f"DELETE FROM {self._table_name} WHERE key = {key}"
-        ).execute()
-
     def pop(self, key: str) -> IOResultE[str]:
         """Read, delete, then return the value."""
         result = self.read(key)
-        result.map(lambda _: self.delete(key))
+        result.map(
+            lambda _: self.connection.sql(
+                f"DELETE FROM {self._table_name} WHERE key = '{key}'"
+            )
+        )
         return result
 
     @impure_safe
     def read(self, key: str) -> str:
         """Get cache by key value"""
         result = self.connection.sql(
-            f"SELECT value FROM {self._table_name} WHERE key = {key}"
+            f"SELECT value FROM {self._table_name} WHERE key = '{key}'"
         ).fetchone()
         if result:
             return result[0]
@@ -60,9 +58,11 @@ class DuckDbCacheResource(dag.ConfigurableResource, BasicCache):
             """
         )
 
-    @impure_safe
     def write(self, key: str, value: str):
-        """Just writes to the cache."""
+        """Just writes to the cache. If a key already exists, update it."""
         self.connection.sql(
-            f"INSERT INTO {self._table_name} VALUES ({key}), ({value});"
-        ).execute()
+            f"""
+            INSERT OR REPLACE INTO {self._table_name} (key, value)
+            VALUES ('{key}', '{value}');
+            """
+        )
