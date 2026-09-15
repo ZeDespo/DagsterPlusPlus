@@ -36,6 +36,7 @@ class PostgresqlResource(dag.ConfigurableResource):
     db_name: str = Field(default="dagster")
 
     def create_resource(self, _) -> PostgresqlExtDatabase:
+        """Creates the resource as an object."""
         return PostgresqlExtDatabase(
             self.db_name,
             user=self.username,

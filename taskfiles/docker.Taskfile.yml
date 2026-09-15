@@ -3,7 +3,7 @@ version: '3'
 
 tasks:
     build-dev:
-        cmd: sudo docker build --platform linux/amd64 --tag {{.DEV_IMAGE}} .
+        cmd: docker build --platform linux/amd64 --tag {{.DEV_IMAGE}} .
         desc: Build a developer image.
         vars:
             DEV_IMAGE: '{{.PROJECT}}-dev:0.0.0'
@@ -13,13 +13,13 @@ tasks:
           - task: start-local-services
           - defer:
                 task: stop-local-services
-          - defer: sudo docker compose down
-          - defer: sudo docker compose -f docker-compose.dev.yml down
-          - sudo docker compose -f docker-compose.dev.yml up
+          - defer: docker compose down
+          - defer: docker compose -f docker-compose.dev.yml down
+          - docker compose -f docker-compose.dev.yml up
         dir: deployment/local
     start-local-services:
-        cmd: sudo docker compose -f deployment/local/docker-compose.yml up -d --wait
+        cmd: docker compose -f deployment/local/docker-compose.yml up -d --wait
         desc: Start the necessary services to run a local version of dagster.
     stop-local-services:
-        cmd: sudo docker compose -f deployment/local/docker-compose.yml down
+        cmd: docker compose -f deployment/local/docker-compose.yml down
         desc: Stop all docker services for a local dagster deployment.

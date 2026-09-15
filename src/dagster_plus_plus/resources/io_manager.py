@@ -5,6 +5,8 @@ loading it into a downstream asset / op as input.
 This file contains the basic definition to be used in all of dagster_plus_plus.
 """
 
+import pickle
+from base64 import b64decode, b64encode
 from typing import Any
 
 import attrs
@@ -15,9 +17,24 @@ from returns.result import Failure, ResultE, Success
 from dagster_plus_plus.core.data_store import (
     IODataStore,
     IOKey,
-    decode_base64_string_to_object,
-    encode_object_to_base64_string,
 )
+
+
+def _decode_base64_string_to_object(s: str) -> Any:
+    """
+    Transform whatever was previously encoded back into it's original form. Will
+    be the opposite of the encode function.
+    """
+    return pickle.loads(b64decode(s))
+
+
+def _encode_object_to_base64_string(value: Any) -> str:
+    """
+    Standardize whatever gets returned from an op / asset / graph into a
+    base64 string, so we can easily store it in whatever data store we're
+    using.
+    """
+    return b64encode(pickle.dumps(value)).decode()
 
 
 class DagPlusPlusIOManager(dag.ConfigurableIOManager):
@@ -134,7 +151,7 @@ class DagPlusPlusIOManager(dag.ConfigurableIOManager):
     def _read_value_from_data_store(self, key: IOKey) -> ResultE[Any]:
         get_result = self.io_data_store.read(key)
         if encoded_string := get_result.value_or(None):
-            return Success(decode_base64_string_to_object(encoded_string))
+            return Success(_decode_base64_string_to_object(encoded_string))
         return get_result  # Return the Failure object.
 
     def handle_output(self, context: dag.OutputContext, obj: Any) -> None:
@@ -150,14 +167,10 @@ class DagPlusPlusIOManager(dag.ConfigurableIOManager):
                 key: value.value for key, value in context.output_metadata.items()
             }
         context.log.debug(f"Writing output to {key = }")
-        self.io_data_store.write(key, encode_object_to_base64_string(obj), metadata)
+        self.io_data_store.write(key, _encode_object_to_base64_string(obj), metadata)
         context.log.debug(f"Written object: {obj}")
         if metadata:
             context.log.debug(f"With metdata: {metadata}")
-
-    # def setup_for_execution(self, context: dag.InitResourceContext):
-    #     """Call all self"""
-    #     self.io_data_store.setup_for_execution(context)
 
     def load_input(self, context: dag.InputContext) -> Any:
         """

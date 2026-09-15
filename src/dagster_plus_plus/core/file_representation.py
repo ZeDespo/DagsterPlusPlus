@@ -5,6 +5,7 @@ ABC.
 
 import abc
 import io
+import json
 import logging
 from copy import deepcopy
 from pathlib import Path
@@ -20,7 +21,7 @@ RESOURCE_CLIENT = TypeVar("RESOURCE_CLIENT")
 """Another generic type. If ingesting locally, this can be a NoneType"""
 
 
-@attrs.define()
+@attrs.define(eq=False)
 class FileBufferPair[FILE, RESOURCE_CLIENT](abc.ABC):
     """
     Small dataclass to couple an object from some source with it's raw bytes
@@ -39,9 +40,13 @@ class FileBufferPair[FILE, RESOURCE_CLIENT](abc.ABC):
         """
         Equality is dependent on the filename only. We assume that there cannot
         be two files with the same name as a base case to cut down on
-        complexity. Besides, this is how Eigen treats documents as well.
+        complexity.
         """
         return isinstance(value, FileBufferPair) and self.filename == value.filename
+
+    def __hash__(self) -> int:
+        """Filename + metadata assigned to it."""
+        return hash(f"{self.filename}{json.dumps(self.metadata)}")
 
     @abc.abstractmethod
     def download_contents(self, client: RESOURCE_CLIENT) -> None:
@@ -125,13 +130,13 @@ class DocumentIngressInterface[SOURCE, FILE, RESOURCE_CLIENT, FBP](abc.ABC):
         **kwargs,
     ) -> Self:
         """
-        Grab the original objects from the provided source, download them, then 
+        Grab the original objects from the provided source, download them, then
         instantiate the object with the underlying file representation buffers.
 
-        :param source: Some object that represents where the files come from. 
+        :param source: Some object that represents where the files come from.
         :param client: The API resource to grab documents with.
         :param logger: A logger that keeps track of execution. Useful for keeping \
-        track of downloaded files. 
+        track of downloaded files.
         :param args: Anything else to pass into the load function.
         :param kwargs: Same as args.
         :return: An instantiated class that is suited for ingress operations.

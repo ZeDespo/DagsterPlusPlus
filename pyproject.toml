@@ -85,7 +85,7 @@ exclude = [
 line-length = 88
 indent-width = 4
 
-target-version = "py313"
+target-version = "py312"
 
 # No point in using this if we don't fix things magically
 fix = true

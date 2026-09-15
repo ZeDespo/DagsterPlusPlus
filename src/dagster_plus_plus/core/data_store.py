@@ -5,30 +5,11 @@ various objects, and how to load a data store component into the IO manager.
 
 import abc
 import contextlib
-import pickle
-from base64 import b64decode, b64encode
 from typing import Any
 
 import attrs
 import dagster as dag
 from returns.result import ResultE
-
-
-def decode_base64_string_to_object(s: str) -> Any:
-    """
-    Transform whatever was previously encoded back into it's original form. Will
-    be the opposite of the encode function.
-    """
-    return pickle.loads(b64decode(s))
-
-
-def encode_object_to_base64_string(value: Any) -> str:
-    """
-    Standardize whatever gets returned from an op / asset / graph into a
-    base64 string, so we can easily store it in whatever data store we're
-    using.
-    """
-    return b64encode(pickle.dumps(value)).decode()
 
 
 @attrs.define
@@ -53,12 +34,12 @@ class IOKey:
         converter=lambda x: x or "", default=""
     )
     """
-    The mapping key that ties a dynamic output in an op to its value. Is not relevant 
+    The mapping key that ties a dynamic output in an op to its value. Is not relevant
     for assets or ops that do not produce dynamic outputs.
     """
     op_output_name: str = attrs.field(converter=lambda x: x or "", default="")
     """
-    If an op returns multiple values, this differentiates one return value from 
+    If an op returns multiple values, this differentiates one return value from
     the other.
     """
 

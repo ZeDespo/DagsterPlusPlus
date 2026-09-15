@@ -43,7 +43,10 @@ class DuckDbCache(dag.ConfigurableResource, BasicDataStore):
         Create the tables if they do not already exist.
         """
         self.connection.sql(
-            f"CREATE TEMP TABLE IF NOT EXISTS {self._table_name} (key VARCHAR PRIMARY KEY, value VARCHAR);"
+            f"""
+            CREATE TEMP TABLE IF NOT EXISTS {self._table_name}
+            (key VARCHAR PRIMARY KEY, value VARCHAR);
+            """
         ).execute()
 
     def write(self, key: str, value: str):

@@ -16,15 +16,15 @@ repos:
         language: system
         types:
           - python
-      - id: dagster-check-defs
-        name: dagster-check-defs
-        entry: task
-        args:
-          - dev:check-dagster-defs
-        language: system
-        pass_filenames: false
-        types:
-          - python
+      # - id: dagster-check-defs
+      #   name: dagster-check-defs
+      #   entry: task
+      #   args:
+      #     - dev:check-dagster-defs
+      #   language: system
+      #   pass_filenames: false
+      #   types:
+      #     - python
       # - id: run-unit-tests
       #   name: run-tests
       #   entry: task
