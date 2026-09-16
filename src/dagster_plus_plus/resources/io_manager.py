@@ -156,10 +156,6 @@ class DagPlusPlusIOManager(dag.ConfigurableIOManager):
                 self.io_data_store.read(key).map(_decode_base64_string_to_object)
             )
         )
-        # get_result = unsafe_perform_io(IO.from_ioresult(self.io_data_store.read(key)))
-        # if encoded_string := get_result.value_or(None):
-        #     return Success(_decode_base64_string_to_object(encoded_string))
-        # return get_result  # Return the Failure object.
 
     def handle_output(self, context: dag.OutputContext, obj: Any) -> None:
         """

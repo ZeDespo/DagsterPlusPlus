@@ -39,7 +39,7 @@ class DagsterIOManagement(DagPlusPlusBaseModel):
 
     upstream_name = peewee.CharField(max_length=256)
     partition_key = peewee.CharField(max_length=256)
-    dynamic_output_mapping_key = peewee.CharField(max_length=64, null=True)
+    dynamic_output_mapping_key = peewee.CharField(max_length=64)
     op_output_name = peewee.CharField(max_length=64)
     encoded_output = playhouse.postgres_ext.TextField()
     metadata = playhouse.postgres_ext.BinaryJSONField(default=dict)
@@ -150,7 +150,7 @@ class PipelineDocument(DagPlusPlusBaseModel):
         return cls.get_or_none(cls.file_key == _make_file_key(file))
 
     @classmethod
-    def get_or_create_document(
+    def get_or_create_file(
         cls,
         context: dag.AssetExecutionContext | dag.OpExecutionContext,
         file: FileKeyGeneratorType,

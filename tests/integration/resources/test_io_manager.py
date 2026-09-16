@@ -2,19 +2,22 @@
 Test by running dagster jobs.
 """
 
+import time
+
 import dagster as dag
 import pytest
 from faker import Faker
 
 from dagster_plus_plus.core.data_store import BaseIODataStore
+from dagster_plus_plus.core.postgres_models import DagsterIOManagement
 from dagster_plus_plus.resources.io_manager import DagPlusPlusIOManager
 from dagster_plus_plus.resources.postgres import (
     PostgresIOManagerDataStoreResource,
     PostgresqlResource,
 )
 
-_COLORS = ["red", "green", "blue"]
-_STATIC_PARTITION = dag.StaticPartitionsDefinition(_COLORS)
+_STATIC_PARTITION_KEYS = ["red", "green", "blue"]
+_STATIC_PARTITION = dag.StaticPartitionsDefinition(_STATIC_PARTITION_KEYS)
 _DYNAMIC_PARTITION = dag.DynamicPartitionsDefinition(name="dyn")
 _MULTI_DIM_PARTITION = dag.MultiPartitionsDefinition(
     partitions_defs={
@@ -24,7 +27,9 @@ _MULTI_DIM_PARTITION = dag.MultiPartitionsDefinition(
 )
 
 
-@pytest.fixture(params=[None, _STATIC_PARTITION])
+@pytest.fixture(
+    params=[None, _STATIC_PARTITION, _DYNAMIC_PARTITION, _MULTI_DIM_PARTITION]
+)
 def partitions_def(request: pytest.FixtureRequest):
     return request.param
 
@@ -39,7 +44,7 @@ def partition_key(
     The actual values of these partition keys do not matter if used in a fixture. More
     finite control will be given to fixtures that need it.
     """
-    standard_pk = faker.random_choices(_COLORS, length=1)[0]
+    standard_pk = faker.random_choices(_STATIC_PARTITION_KEYS, length=1)[0]
     dynamic_pk = faker.word()
     if isinstance(partitions_def, dag.StaticPartitionsDefinition):
         return standard_pk
@@ -104,4 +109,85 @@ class TestDagPlusPlusIOManager:
             instance=instance,
             asset_selection=[asset_a.key, asset_b.key, asset_c.key],
             partition_key=partition_key,
+        )
+
+    def test_outputs_get_updated_in_database(
+        self, defs: dag.Definitions, partitions_def, partition_key, instance
+    ):
+
+        @dag.asset(partitions_def=partitions_def)
+        def current_time():
+            return time.time()
+
+        defs = dag.Definitions.merge(defs, dag.Definitions(assets=[current_time]))
+        job = defs.get_implicit_global_asset_job_def()
+        job.execute_in_process(
+            instance=instance,
+            asset_selection=[current_time.key],
+            partition_key=partition_key,
+        )
+        value_a = DagsterIOManagement.get(
+            upstream_name="current_time", partition_key=partition_key or ""
+        ).encoded_output
+        job.execute_in_process(
+            instance=instance,
+            asset_selection=[current_time.key],
+            partition_key=partition_key,
+        )
+        assert (
+            value_a
+            != DagsterIOManagement.get(
+                upstream_name="current_time", partition_key=partition_key or ""
+            ).encoded_output
+        )
+
+    def test_non_partitioned_asset_can_read_all_partitioned_ones_as_input(
+        self, defs: dag.Definitions, instance, faker: Faker
+    ):
+        @dag.asset(partitions_def=_STATIC_PARTITION)
+        def color(context: dag.AssetExecutionContext) -> int:
+            return hash(context.partition_key)
+
+        @dag.asset
+        def all_colors(color: dict[str, int]):
+            assert all(c in color for c in _STATIC_PARTITION_KEYS)
+            for k, v in color.items():
+                assert v == hash(k)
+
+        defs = dag.Definitions.merge(defs, dag.Definitions(assets=[color, all_colors]))
+        job = defs.get_implicit_global_asset_job_def()
+        for static_pk in _STATIC_PARTITION_KEYS:
+            job.execute_in_process(
+                instance=instance,
+                asset_selection=[color.key],
+                partition_key=static_pk,
+            )
+        job.execute_in_process(instance=instance, asset_selection=[all_colors.key])
+
+    def test_partitioned_asset_can_load_non_partitioned_as_input(
+        self,
+        defs: dag.Definitions,
+        instance,
+        partitions_def,
+        partition_key,
+    ):
+        if not partitions_def:
+            pytest.skip(reason="Need a partitioned asset to test this.")
+
+        @dag.asset
+        def all_colors() -> str:
+            return "ROY G. BIV"
+
+        @dag.asset(partitions_def=partitions_def)
+        def color(all_colors: str):
+            assert all_colors == "ROY G. BIV"
+
+        defs = dag.Definitions.merge(defs, dag.Definitions(assets=[color, all_colors]))
+        job = defs.get_implicit_global_asset_job_def()
+        job.execute_in_process(
+            instance=instance,
+            asset_selection=[all_colors.key],
+        )
+        job.execute_in_process(
+            instance=instance, asset_selection=[color.key], partition_key=partition_key
         )
