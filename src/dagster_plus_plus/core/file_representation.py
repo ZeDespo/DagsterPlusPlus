@@ -94,7 +94,7 @@ class DocumentIngressInterface[SOURCE, FILE, RESOURCE_CLIENT, FBP](abc.ABC):
     _asset_key: str | list[str] | None = attrs.field(default=None)
     """If making an asset, this will be it's 'name'"""
     client: RESOURCE_CLIENT = attrs.field(default=None, converter=deepcopy, repr=False)
-    """An API client to attach to the object to allow us to download files."""
+    """A networking client to attach to the object to allow us to download files."""
 
     @property
     def asset_key(self) -> str | list[str] | None:
