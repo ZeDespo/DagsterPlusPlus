@@ -72,10 +72,10 @@ tasks:
           - deployment/local/.env
     test-integration:
         cmds:
-          - task: docker:start-local-services
           - defer:
                 task: docker:stop-local-services
+          - task: docker:start-local-services
           - pytest tests/integration {{.CLI_ARGS}}
         desc: Run tests that depend on other resources.
         dotenv:
-          - deployment/local/.env
+          - .env

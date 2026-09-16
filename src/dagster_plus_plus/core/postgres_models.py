@@ -94,8 +94,8 @@ def _make_file_key(file: FileKeyGeneratorType) -> str:
 
 class PipelineDocument(DagPlusPlusBaseModel):
     """
-    Holds pertitent,individual document information. Is indexed based off a formatted
-    filename, therefore, you cannot hold two
+    Holds pertitent, individual document information. Is indexed based off a formatted
+    filename.
 
     You can either use this model for your use case and use the ``metadata`` column
     as a dumping ground, or you can inherit from this class and add whatever columns

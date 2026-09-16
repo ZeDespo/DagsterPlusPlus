@@ -8,10 +8,11 @@ import dagster as dag
 import peewee
 from playhouse.postgres_ext import PostgresqlExtDatabase
 from pydantic import Field
+from returns.io import IOResultE, impure_safe
 from returns.result import safe
 
 from dagster_plus_plus.core.data_store import (
-    BasicDataStore,
+    BasicCache,
     IODataStore,
     IOKey,
 )
@@ -46,12 +47,18 @@ class PostgresqlResource(dag.ConfigurableResource):
         )
 
 
-class PostgresCache(dag.ConfigurableResource, BasicDataStore):
+class PostgresCacheResource(dag.ConfigurableResource, BasicCache):
     """An unlogged table to act as a redis cache."""
 
     postgres: dag.ResourceDependency[PostgresqlExtDatabase]
 
-    @safe
+    def pop(self, key: str) -> IOResultE[Any]:
+        """Read the value then pop the key from the unlogged table."""
+        result = self.read(key)
+        result.map(lambda _: Cache.delete_by_id(key))
+        return result
+
+    @impure_safe
     def read(self, key: str) -> str:
         """Get cache by key value"""
         return Cache.get(key=key).value
@@ -76,7 +83,9 @@ class PostgresCache(dag.ConfigurableResource, BasicDataStore):
 
     def write(self, key: str, value: str):
         """Just writes to the cache."""
-        Cache.create(key=key, value=value)
+        Cache.insert(key=key, value=value).on_conflict(
+            conflict_target=[Cache.key], preserve=[Cache.value]
+        ).execute()
 
 
 class PostgresIOManagerDataStoreResource(dag.ConfigurableResource, IODataStore):
