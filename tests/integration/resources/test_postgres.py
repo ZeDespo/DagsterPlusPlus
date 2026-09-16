@@ -1,4 +1,3 @@
-import os
 from unittest.mock import Mock
 
 import pytest
@@ -10,17 +9,6 @@ from dagster_plus_plus.resources.postgres import (
     PostgresCacheResource,
     PostgresqlResource,
 )
-
-
-@pytest.fixture
-def postgres_resource() -> PostgresqlResource:
-    return PostgresqlResource(
-        host="localhost",
-        port=5432,
-        username=os.environ["DAGSTER_POSTGRES_USER"],
-        password=os.environ["DAGSTER_POSTGRES_PASSWORD"],
-        db_name=os.environ["DAGSTER_POSTGRES_NAME"],
-    )
 
 
 class TestPostgresqlResource:

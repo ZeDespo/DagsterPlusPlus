@@ -11,8 +11,10 @@ from typing import Any
 
 import attrs
 import dagster as dag
+from returns.io import IO
 from returns.maybe import Maybe, Nothing, Some
 from returns.result import Failure, ResultE, Success
+from returns.unsafe import unsafe_perform_io
 
 from dagster_plus_plus.core.data_store import (
     BaseIODataStore,
@@ -108,8 +110,8 @@ class DagPlusPlusIOManager(dag.ConfigurableIOManager):
         value = self._read_value_from_data_store(key)
         context.log.debug(f"Read {value = }")
         match value:
-            case Success(value):
-                return Success(value)
+            case Success(_):
+                return value
             case Failure(e):
                 context.log.debug(f"Could not get value from data store: {e}")
                 match self._parse_two_dimensional_key_if_applicable(context, key):
@@ -134,7 +136,7 @@ class DagPlusPlusIOManager(dag.ConfigurableIOManager):
                 new_key = attrs.evolve(
                     key, partition_key=f"{split_key[0]}|{split_key[i + 1]}"
                 )
-                inputs[i] = self._read_value_from_data_store(new_key).value_or(None)
+                inputs[i] = self._read_value_from_data_store(new_key)
                 context.log.debug(
                     f"Partition {new_key.partition_key = }; value = {inputs[i]}"
                 )
@@ -149,10 +151,15 @@ class DagPlusPlusIOManager(dag.ConfigurableIOManager):
         return Nothing
 
     def _read_value_from_data_store(self, key: IOKey) -> ResultE[Any]:
-        get_result = self.io_data_store.read(key)
-        if encoded_string := get_result.value_or(None):
-            return Success(_decode_base64_string_to_object(encoded_string))
-        return get_result  # Return the Failure object.
+        return unsafe_perform_io(
+            IO.from_ioresult(
+                self.io_data_store.read(key).map(_decode_base64_string_to_object)
+            )
+        )
+        # get_result = unsafe_perform_io(IO.from_ioresult(self.io_data_store.read(key)))
+        # if encoded_string := get_result.value_or(None):
+        #     return Success(_decode_base64_string_to_object(encoded_string))
+        # return get_result  # Return the Failure object.
 
     def handle_output(self, context: dag.OutputContext, obj: Any) -> None:
         """

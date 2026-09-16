@@ -9,7 +9,6 @@ import peewee
 from playhouse.postgres_ext import PostgresqlExtDatabase
 from pydantic import Field
 from returns.io import IOResultE, impure_safe
-from returns.result import safe
 
 from dagster_plus_plus.core.data_store import (
     BaseCache,
@@ -93,7 +92,7 @@ class PostgresIOManagerDataStoreResource(dag.ConfigurableResource, BaseIODataSto
 
     postgres: dag.ResourceDependency[PostgresqlResource]
 
-    @safe
+    @impure_safe
     def read(self, key: IOKey) -> str:
         """Get value by primary key."""
         row = DagsterIOManagement.get(
@@ -104,6 +103,7 @@ class PostgresIOManagerDataStoreResource(dag.ConfigurableResource, BaseIODataSto
         )
         return str(row.encoded_output)
 
+    @impure_safe
     def read_metadata(self, key: IOKey) -> dict[str, Any]:
         """Get the metadata, if any has been added in for the run."""
         row = DagsterIOManagement.get(
@@ -125,7 +125,7 @@ class PostgresIOManagerDataStoreResource(dag.ConfigurableResource, BaseIODataSto
         self, key: IOKey, value: str, metadata: dict[str, Any] | None = None
     ) -> None:
         """Write the row to the database."""
-        DagsterIOManagement.get_or_create(
+        DagsterIOManagement.insert(
             upstream_name=key.upstream_name,
             partition_key=key.partition_key,
             dynamic_output_mapping_key=key.dynamic_output_mapping_key,
@@ -140,4 +140,4 @@ class PostgresIOManagerDataStoreResource(dag.ConfigurableResource, BaseIODataSto
                 DagsterIOManagement.op_output_name,
             ],
             preserve=[DagsterIOManagement.encoded_output, DagsterIOManagement.metadata],
-        )
+        ).execute()
