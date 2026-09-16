@@ -88,7 +88,7 @@ class IOKey:
 
 
 @attrs.define
-class IODataStore(abc.ABC):
+class BaseIODataStore(abc.ABC):
     """
     Say you have to store data into a giant monolith of a postgres table, or a series
     of key/value pairs in redis. Create your own datastore object that will allow the
@@ -112,7 +112,7 @@ class IODataStore(abc.ABC):
 
 
 @attrs.define
-class BasicDataStore(abc.ABC):
+class BaseDataStore(abc.ABC):
     """
     Treat this data store as something you can freely add / subtract to however
     many times you want.
@@ -133,7 +133,7 @@ class BasicDataStore(abc.ABC):
 
 
 @attrs.define
-class BasicCache(BasicDataStore, abc.ABC):
+class BaseCache(BaseDataStore, abc.ABC):
     """
     A class that inherits from this will be operating as a cache, which typically
     means when the process dies, the table data will be lost.

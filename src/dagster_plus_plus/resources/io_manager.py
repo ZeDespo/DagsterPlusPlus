@@ -15,7 +15,7 @@ from returns.maybe import Maybe, Nothing, Some
 from returns.result import Failure, ResultE, Success
 
 from dagster_plus_plus.core.data_store import (
-    IODataStore,
+    BaseIODataStore,
     IOKey,
 )
 
@@ -52,7 +52,7 @@ class DagPlusPlusIOManager(dag.ConfigurableIOManager):
           non-partitioned asset as a list object
     """
 
-    io_data_store: dag.ResourceDependency[IODataStore]
+    io_data_store: dag.ResourceDependency[BaseIODataStore]
 
     def _derive_key_for_loading_upstream_asset(
         self, context: dag.InputContext

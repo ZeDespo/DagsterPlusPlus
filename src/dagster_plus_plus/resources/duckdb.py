@@ -6,7 +6,7 @@ from pydantic import Field, PrivateAttr
 from returns.io import IOResultE, impure_safe
 
 from dagster_plus_plus.core.data_store import (
-    BasicCache,
+    BaseCache,
 )
 
 
@@ -21,7 +21,7 @@ class DuckDbResource(dag.ConfigurableResource):
         return duckdb.connect(database=self.database, read_only=self.read_only)
 
 
-class DuckDbCacheResource(dag.ConfigurableResource, BasicCache):
+class DuckDbCacheResource(dag.ConfigurableResource, BaseCache):
     """An unlogged, temporary table to act as a cache across dagster runs."""
 
     connection: dag.ResourceDependency[duckdb.DuckDBPyConnection]

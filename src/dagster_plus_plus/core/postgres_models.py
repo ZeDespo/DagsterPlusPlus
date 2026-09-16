@@ -39,7 +39,7 @@ class DagsterIOManagement(DagPlusPlusBaseModel):
 
     upstream_name = peewee.CharField(max_length=256)
     partition_key = peewee.CharField(max_length=256)
-    dynamic_output_mapping_key = peewee.CharField(max_length=64)
+    dynamic_output_mapping_key = peewee.CharField(max_length=64, null=True)
     op_output_name = peewee.CharField(max_length=64)
     encoded_output = playhouse.postgres_ext.TextField()
     metadata = playhouse.postgres_ext.BinaryJSONField(default=dict)

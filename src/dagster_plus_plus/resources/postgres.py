@@ -12,8 +12,8 @@ from returns.io import IOResultE, impure_safe
 from returns.result import safe
 
 from dagster_plus_plus.core.data_store import (
-    BasicCache,
-    IODataStore,
+    BaseCache,
+    BaseIODataStore,
     IOKey,
 )
 from dagster_plus_plus.core.postgres_models import (
@@ -47,7 +47,7 @@ class PostgresqlResource(dag.ConfigurableResource):
         )
 
 
-class PostgresCacheResource(dag.ConfigurableResource, BasicCache):
+class PostgresCacheResource(dag.ConfigurableResource, BaseCache):
     """An unlogged table to act as a redis cache."""
 
     postgres: dag.ResourceDependency[PostgresqlExtDatabase]
@@ -88,7 +88,7 @@ class PostgresCacheResource(dag.ConfigurableResource, BasicCache):
         ).execute()
 
 
-class PostgresIOManagerDataStoreResource(dag.ConfigurableResource, IODataStore):
+class PostgresIOManagerDataStoreResource(dag.ConfigurableResource, BaseIODataStore):
     """To be used exclusively with the I/O manager"""
 
     postgres: dag.ResourceDependency[PostgresqlResource]
@@ -132,4 +132,12 @@ class PostgresIOManagerDataStoreResource(dag.ConfigurableResource, IODataStore):
             op_output_name=key.op_output_name,
             encoded_output=value,
             metadata=metadata,
+        ).on_conflict(
+            conflict_target=[
+                DagsterIOManagement.upstream_name,
+                DagsterIOManagement.partition_key,
+                DagsterIOManagement.dynamic_output_mapping_key,
+                DagsterIOManagement.op_output_name,
+            ],
+            preserve=[DagsterIOManagement.encoded_output, DagsterIOManagement.metadata],
         )
