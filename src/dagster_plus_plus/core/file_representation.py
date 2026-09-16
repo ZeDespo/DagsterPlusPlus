@@ -1,6 +1,6 @@
 """
-Core concepts for I/O bound services, such as how to organize files via an
-ABC.
+Enables organization of files based on some logical grouping, and the lazy downloading
+of file contents that are required until we absolutely need to download them.
 """
 
 import abc
@@ -22,10 +22,10 @@ RESOURCE_CLIENT = TypeVar("RESOURCE_CLIENT")
 
 
 @attrs.define(eq=False)
-class FileBufferPair[FILE, RESOURCE_CLIENT](abc.ABC):
+class LazyFileBuffer[FILE, RESOURCE_CLIENT](abc.ABC):
     """
     Small dataclass to couple an object from some source with it's raw bytes
-    representation. Wrapping the document data in this object allows us to
+    representation. Wrapping the file data in this object allows us to
     fetch buffer data upon request, so we only use internet bandwith when necessary.
     """
 
@@ -34,7 +34,7 @@ class FileBufferPair[FILE, RESOURCE_CLIENT](abc.ABC):
     buffer: io.BytesIO = attrs.field(repr=False, factory=io.BytesIO)
     """The bytes representation of the file as if we opened it in the file system"""
     metadata: dict = attrs.field(repr=False, factory=dict, kw_only=True)
-    """Metadata that we know of ahead of time to attach to the document."""
+    """Metadata that we know of ahead of time to attach to the file."""
 
     def __eq__(self, value: object, /) -> bool:
         """
@@ -42,7 +42,7 @@ class FileBufferPair[FILE, RESOURCE_CLIENT](abc.ABC):
         be two files with the same name as a base case to cut down on
         complexity.
         """
-        return isinstance(value, FileBufferPair) and self.filename == value.filename
+        return isinstance(value, LazyFileBuffer) and self.filename == value.filename
 
     def __hash__(self) -> int:
         """Filename + metadata assigned to it."""
@@ -52,7 +52,7 @@ class FileBufferPair[FILE, RESOURCE_CLIENT](abc.ABC):
     def download_contents(self, client: RESOURCE_CLIENT) -> None:
         """
         Download the file's content to the internal ``buffer`` attribute.
-        Helps keep the lazy design pattern so we only download documents that we
+        Helps keep the lazy design pattern so we only download files that we
         know we will need.
         """
 
@@ -71,12 +71,12 @@ class FileBufferPair[FILE, RESOURCE_CLIENT](abc.ABC):
         self.buffer.seek(0)
 
 
-FBP = TypeVar("FBP", bound=FileBufferPair)
+FBP = TypeVar("FBP", bound=LazyFileBuffer)
 """GENERIC variable for file buffer pair objects"""
 
 
 @attrs.define()
-class DocumentIngressInterface[SOURCE, FILE, RESOURCE_CLIENT, FBP](abc.ABC):
+class IngressInterface[SOURCE, FILE, RESOURCE_CLIENT, FBP](abc.ABC):
     """
     ABC for structuring files togehter to prepare them for ingestion via some graph /
     op.
@@ -94,7 +94,7 @@ class DocumentIngressInterface[SOURCE, FILE, RESOURCE_CLIENT, FBP](abc.ABC):
     _asset_key: str | list[str] | None = attrs.field(default=None)
     """If making an asset, this will be it's 'name'"""
     client: RESOURCE_CLIENT = attrs.field(default=None, converter=deepcopy, repr=False)
-    """A networking client to attach to the object to allow us to download files."""
+    """A client / connection to allow downloading file content lazily."""
 
     @property
     def asset_key(self) -> str | list[str] | None:
@@ -134,7 +134,7 @@ class DocumentIngressInterface[SOURCE, FILE, RESOURCE_CLIENT, FBP](abc.ABC):
         instantiate the object with the underlying file representation buffers.
 
         :param source: Some object that represents where the files come from.
-        :param client: The API resource to grab documents with.
+        :param client: The API resource to grab files with.
         :param logger: A logger that keeps track of execution. Useful for keeping \
         track of downloaded files.
         :param args: Anything else to pass into the load function.
