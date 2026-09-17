@@ -8,8 +8,11 @@ import dagster as dag
 import pytest
 from faker import Faker
 
-from dagster_plus_plus.core.data_store import BaseIODataStore
-from dagster_plus_plus.core.postgres_models import DagsterIOManagement
+from dagster_plus_plus.core.data_store import BaseIODataStore, IOKey
+from dagster_plus_plus.resources.duckdb import (
+    DuckDbIOManagerDataStoreResource,
+    DuckDbResource,
+)
 from dagster_plus_plus.resources.io_manager import DagPlusPlusIOManager
 from dagster_plus_plus.resources.postgres import (
     PostgresIOManagerDataStoreResource,
@@ -58,26 +61,24 @@ def partition_key(
 
 
 class TestDagPlusPlusIOManager:
-    @pytest.fixture(params=[0])
+    @pytest.fixture(params=[0, 1])
     def io_data_store(
-        self, request: pytest.FixtureRequest, postgres_resource: PostgresqlResource
+        self,
+        request: pytest.FixtureRequest,
+        postgres_resource: PostgresqlResource,
+        duckdb_resource: DuckDbResource,
     ) -> BaseIODataStore:
         data_store_mapping = {
-            0: PostgresIOManagerDataStoreResource(postgres=postgres_resource)
+            0: PostgresIOManagerDataStoreResource(postgres=postgres_resource),
+            1: DuckDbIOManagerDataStoreResource(connection=duckdb_resource),
         }
-        io_ds = data_store_mapping[request.param]
-        return io_ds
+        return data_store_mapping[request.param]
 
     @pytest.fixture(params=[0])
     def defs(self, io_data_store: BaseIODataStore) -> dag.Definitions:
         return dag.Definitions(
             resources={"io_manager": DagPlusPlusIOManager(io_data_store=io_data_store)}
         )
-
-    @pytest.fixture(autouse=True)
-    def setup(self, io_data_store):
-        yield
-        # DagsterIOManagement.truncate_table()
 
     def test_basic_input_output(
         self,
@@ -112,13 +113,19 @@ class TestDagPlusPlusIOManager:
         )
 
     def test_outputs_get_updated_in_database(
-        self, defs: dag.Definitions, partitions_def, partition_key, instance
+        self,
+        defs: dag.Definitions,
+        partitions_def,
+        partition_key,
+        instance,
     ):
 
         @dag.asset(partitions_def=partitions_def)
         def current_time():
             return time.time()
 
+        io_key = IOKey("current_time", partition_key=partition_key)
+        io_data_store = defs.resources["io_manager"].io_data_store
         defs = dag.Definitions.merge(defs, dag.Definitions(assets=[current_time]))
         job = defs.get_implicit_global_asset_job_def()
         job.execute_in_process(
@@ -126,20 +133,14 @@ class TestDagPlusPlusIOManager:
             asset_selection=[current_time.key],
             partition_key=partition_key,
         )
-        value_a = DagsterIOManagement.get(
-            upstream_name="current_time", partition_key=partition_key or ""
-        ).encoded_output
+        value_a = io_data_store.read(io_key)
         job.execute_in_process(
             instance=instance,
             asset_selection=[current_time.key],
             partition_key=partition_key,
         )
-        assert (
-            value_a
-            != DagsterIOManagement.get(
-                upstream_name="current_time", partition_key=partition_key or ""
-            ).encoded_output
-        )
+        value_b = io_data_store.read(io_key)
+        assert value_a != value_b
 
     def test_non_partitioned_asset_can_read_all_partitioned_ones_as_input(
         self, defs: dag.Definitions, instance, faker: Faker

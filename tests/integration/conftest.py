@@ -20,7 +20,7 @@ def instance() -> dag.DagsterInstance:
 
 @pytest.fixture
 def duckdb_resource() -> DuckDbResource:
-    return DuckDbResource(database=":memory:", read_only=False)
+    return DuckDbResource(database="dagplusplus.db", read_only=False)
 
 
 @pytest.fixture
