@@ -1,0 +1,89 @@
+---
+version: '3'
+
+includes:
+    docker: docker.Taskfile.yml
+
+vars:
+    PYTHON_VERSION: 3.13
+
+tasks:
+    check-dagster-defs:
+        cmds:
+          - task: docker:start-local-services
+          - defer:
+                task: docker:stop-local-services
+          - dg check defs --log-level debug
+        desc: Validate the assets, sensors, jobs, etc in a Dagster deployment.
+        dotenv:
+          - deployment/local/.env
+    docs:
+        cmds:
+          - sphinx-build . _build -b html
+          - open _build/index.html
+        desc: Build a local version of the sphinx documentation then opens it.
+        dir: documentation/
+        deps:
+          - install
+    env-file:
+        cmd: cp template.env .env
+        desc: Create the .env file from the template for testing.
+        dir: deployment/local
+        status:
+          - test -e .env
+    get-uv:
+        cmd: curl -LsSf https://astral.sh/uv/install.sh | sh
+        desc: Download and install UV, the package manager.
+        status:
+          - which uv
+          - which uvx
+    venv:
+        cmds:
+          - uv python install {{.PYTHON_VERSION}}
+          - uv venv --python {{.PYTHON_VERSION}}
+        desc: Install uv, get the py python version to run the virtualenv.
+        status:
+          - ls .venv
+    install:
+        cmds:
+          - task: get-uv
+          - task: venv
+          - task: uv
+          - task: pre-commit
+          - task: env-file
+        desc: Create the virtual environment and install dependencies.
+    new-project:
+        cmd: uv run create-dagster project {{.PROJECT}}
+        desc: Create a new dagster project if it does not exist already.
+        status:
+          - ls {{.PROJECT}}
+    pre-commit:
+        cmd: uv run pre-commit install -t pre-commit -t commit-msg
+        desc: Install pre-commit hooks
+    run:
+        cmds:
+          - task: docker:start-local-services
+          - defer:
+                task: docker:stop-local-services
+          - DAGSTER_HOME=$PWD/deployment/local uv run dg dev
+        desc: Start the dagster development server
+        dotenv:
+          - deployment/local/.env
+    uv:
+        cmd: uv sync --all-extras
+        desc: Install all python dependencies with uv
+    test:
+        cmds:
+          - task: test-integration
+        desc: Run tests
+        dotenv:
+          - deployment/local/.env
+    test-integration:
+        cmds:
+          - defer:
+                task: docker:stop-local-services
+          - task: docker:start-local-services
+          - uv run pytest tests/integration {{.CLI_ARGS}}
+        desc: Run tests that depend on other resources.
+        dotenv:
+          - deployment/local/.env

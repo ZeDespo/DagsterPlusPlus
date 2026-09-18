@@ -1,0 +1,150 @@
+[project]
+name = "dagster_plus_plus"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "dagster>=1.13.18",
+  "dagster-dbt>=0.29.18",
+  "dagster-docker>=0.29.18",
+  "dagster-postgres>=0.29.18",
+  "dagster-webserver>=1.13.18",
+  "dbt-duckdb>=1.11.0",
+  "dbt-postgres>=1.11.0",
+  "pandas>=3.0.5",
+  "pdf2image>=1.17.0",
+  "peewee>=4.3.0",
+  "pendulum>=3.2.0",
+  "pillow>=12.3.0",
+  "psycopg>=3.3.4",
+  "pypdf>=6.16.1",
+  "pytesseract>=0.3.13",
+  "returns>=0.29.0",
+]
+
+[project.scripts]
+dagster-eigen = "dagster_plus_plus:main"
+
+[dependency-groups]
+dev = [
+  "create-dagster>=1.13.18",
+  "dagster-dg-cli>=1.13.18",
+  "faker>=40.39.0",
+  "pre-commit>=4.6.2",
+  "pytest>=9.1.1",
+  "ruff>=0.16.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "dagster_plus_plus"
+registry_modules = [
+  "dagster_plus_plus.components.*",
+]
+
+[tool.hatch.build.targets.wheel]
+force-include = { "pyproject.toml" = "pyproject.toml" }
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".ipynb_checkpoints",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pyenv",
+  ".pytest_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  ".vscode",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "site-packages",
+  "venv",
+]
+
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+target-version = "py312"
+
+# No point in using this if we don't fix things magically
+fix = true
+
+[tool.ruff.lint]
+select = [
+  "F",  # pyflake linting
+  "E",  # Python code style enforced
+  "W",  # Ditto, but a lot more nitpicky.
+  "I",  # Love Isort.
+  "D1",  # Python documentation stuff
+  "D414",
+  "D417",
+  "D418",
+  "D419",
+  "ASYNC",  # Async gang
+  "S1",  # Prevent bad practices with passwords and try excepts
+  "Q",  # conform to quotes
+  "RET",  # Flake8 return
+  "SIM",  # Write simpler Pythonic code.
+  "ARG",  # Detect unused arguments
+  "PTH",  # No more os module.
+  "PL",  # Pylint has good rules.
+  "RUF",  # Goated RUFF rules.
+  "TID",  # Autoflake!
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = true
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
