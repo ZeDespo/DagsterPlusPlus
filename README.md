@@ -28,23 +28,6 @@ break dagster however I see fit.
 
 ### Installing dependencies
 
-**uv**
-
-Ensure [`uv`](https://docs.astral.sh/uv/) is installed following their [official documentation](https://docs.astral.sh/uv/getting-started/installation/).
-
-Create a virtual environment, and install the required dependencies using _sync_:
-
-```bash
-uv sync
-```
-
-Then, activate the virtual environment:
-
-| OS | Command |
-| --- | --- |
-| MacOS | ```source .venv/bin/activate``` |
-| Windows | ```.venv\Scripts\activate``` |
-
 **task**
 
 It's essentially a modern day `make`. 
@@ -54,4 +37,6 @@ Install it with this one liner:
 
 Then, run `task dev:install`. 
 
-##
+## Running Tests 
+
+`task dev:test`
