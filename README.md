@@ -1,10 +1,34 @@
 # dagster_plus_plus
 
+A utility kit for Dagster to solve some problems I encountered.
+
+- Resources to access persistent data stores.
+    - Postgres (with cache via unlogged table).
+    - DuckDB  (with cache via temporary table).
+- An IO manager that... 
+    - writes inputs / outputs to a database rather than the file system.
+    - allows non-partitioned assets to provide downstream output to partitioned assets.
+    - allows partitioned assets to provide donwstream output to non-partitioned assets 
+      as a mapping where the key is the partition key and the value is the materialized asset value.
+
+## Inspiration 
+
+Dagster is pretty good at data orchestration; however, the default behaviors of some 
+of their parts are questionable. The I/O manager that comes default is strict, and relies 
+on the file system by default. There aren't any "common sense" resources included, 
+which can lead to developers copying and pasting the same code over and over. The 
+type system (while greatly appreciated for correctness) can be challenging to work 
+around and make generic pipelines. And finally, there isn't an easy way to just pass 
+data around from assets in one repo to another.
+
+So I made this swiss army knife of readily accessible utilities that can let me 
+break dagster however I see fit. 
+
 ## Getting started
 
 ### Installing dependencies
 
-**Option 1: uv**
+**uv**
 
 Ensure [`uv`](https://docs.astral.sh/uv/) is installed following their [official documentation](https://docs.astral.sh/uv/getting-started/installation/).
 
@@ -21,41 +45,13 @@ Then, activate the virtual environment:
 | MacOS | ```source .venv/bin/activate``` |
 | Windows | ```.venv\Scripts\activate``` |
 
-**Option 2: pip**
+**task**
 
-Install the python dependencies with [pip](https://pypi.org/project/pip/):
+It's essentially a modern day `make`. 
 
-```bash
-python3 -m venv .venv
-```
+Install it with this one liner: 
+`sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin`
 
-Then activate the virtual environment:
+Then, run `task dev:install`. 
 
-| OS | Command |
-| --- | --- |
-| MacOS | ```source .venv/bin/activate``` |
-| Windows | ```.venv\Scripts\activate``` |
-
-Install the required dependencies:
-
-```bash
-pip install -e ".[dev]"
-```
-
-### Running Dagster
-
-Start the Dagster UI web server:
-
-```bash
-dg dev
-```
-
-Open http://localhost:3000 in your browser to see the project.
-
-## Learn more
-
-To learn more about this template and Dagster in general:
-
-- [Dagster Documentation](https://docs.dagster.io/)
-- [Dagster University](https://courses.dagster.io/)
-- [Dagster Slack Community](https://dagster.io/slack)
+##

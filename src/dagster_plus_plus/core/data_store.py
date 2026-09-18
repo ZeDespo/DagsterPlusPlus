@@ -13,6 +13,18 @@ from returns.io import IOResultE
 
 
 @attrs.define
+class ResourceRequiringDBConnection(abc.ABC):
+    """
+    Some resource whose sole responsibility is to create a DB
+    connection.
+    """
+
+    @abc.abstractmethod
+    def create_resource(self, _) -> Any:
+        """Creates the resource as an object."""
+
+
+@attrs.define
 class IOKey:
     """
     An object representing the different components of the key. This is pertinent

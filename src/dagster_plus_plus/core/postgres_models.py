@@ -92,28 +92,27 @@ def _make_file_key(file: FileKeyGeneratorType) -> str:
     return regex.sub(r"[^a-zA-Z0-9]", "_", filename)
 
 
-class PipelineDocument(DagPlusPlusBaseModel):
+class PipelineFile(DagPlusPlusBaseModel):
     """
-    Holds pertitent, individual document information. Is indexed based off a formatted
-    filename.
+    If your pipeline calls for keeping a record of any file that makes it through,
+    use this model to hold pertinent information about it.
+
+    You'll rarely look up individual rows this way, but you can use Peewee select
+    statements to
 
     You can either use this model for your use case and use the ``metadata`` column
     as a dumping ground, or you can inherit from this class and add whatever columns
     you want to add that can be easily structured.
 
-    Would recommend using the ``metadata`` column as a means to dump data that would
-    facilitate multiple rows in some table, such as timestamps for when the
-    documents go through certain runs. Using metadata as a means to pass
-    information across assets leads to the usual headaches of dealing with
-    unstructured data (null keys, keys not existing, keys easily getting erased on
-    update by mistake).
     """
 
     id = peewee.AutoField(primary_key=True)
     original_filename = peewee.CharField()
     file_key = peewee.CharField(max_length=255)
     """A standardized file stem of the original filename."""
-    partition_key = peewee.CharField(max_length=64, default="")
+    step_name = peewee.CharField(max_length=128)
+    """The AssetKey or the op name that initially put this file in the database."""
+    partition_key = peewee.CharField(max_length=128, default="")
     """
     Which partitioned asset (if any) is responsible for putting
     this in the pipeline.
@@ -133,6 +132,7 @@ class PipelineDocument(DagPlusPlusBaseModel):
             (
                 (
                     "file_key",
+                    "step_name",
                     "partition_key",
                 ),
                 False,
@@ -140,14 +140,14 @@ class PipelineDocument(DagPlusPlusBaseModel):
         )
 
     @classmethod
-    def get_document_or_none(cls, file: FileKeyGeneratorType) -> Self | None:
+    def get_or_none(cls, file: FileKeyGeneratorType) -> Self | None:
         """
-        Return the document if the generated key exists, else return a Nothing object.
+        Override base method so we do not rely on someone making an arbitrary file key.
 
         If you know the ``file_key`` value in advance, just use the base peewee
         ``get_or_none`` method instead.
         """
-        return cls.get_or_none(cls.file_key == _make_file_key(file))
+        return super().get_or_none(cls.file_key == _make_file_key(file))
 
     @classmethod
     def get_or_create_file(
@@ -165,16 +165,22 @@ class PipelineDocument(DagPlusPlusBaseModel):
         file key generation in favor of using this string. Be careful.
         :return: A tuple of the document and True if it was created, False if not
         """
-        if document := cls.get_document_or_none(file):
+        if document := cls.get_or_none(file):
             return document, False
         return cls.create(
             file_key=_make_file_key(file),
             original_filename=_extract_filename_from_object(file),
+            step_name=context.asset_key.to_python_identifier()
+            if isinstance(context, dag.AssetExecutionContext)
+            else context.op.name,
             partition_key=context.partition_key,
         ), True
 
     def update_metadata(self, **new_metadata) -> Self:
-        """The same exact method as we would update two dicts."""
+        """
+        Concatenate the currently existing metadata with what's passed in. In case of
+        duplicate keys, the parameters will overwrite what is in the metadata.
+        """
         cls = type(self)
         return next(
             iter(

@@ -8,7 +8,6 @@ vars:
 includes:
     dev: ./taskfiles/dev.Taskfile.yml
     docker: ./taskfiles/docker.Taskfile.yml
-    git: ./taskfiles/git.Taskfile.yml
 
 tasks:
     make-env-files:

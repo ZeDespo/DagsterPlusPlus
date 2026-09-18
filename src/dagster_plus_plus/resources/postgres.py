@@ -14,6 +14,7 @@ from dagster_plus_plus.core.data_store import (
     BaseCache,
     BaseIODataStore,
     IOKey,
+    ResourceRequiringDBConnection,
 )
 from dagster_plus_plus.core.postgres_models import (
     Cache,
@@ -21,7 +22,7 @@ from dagster_plus_plus.core.postgres_models import (
 )
 
 
-class PostgresqlResource(dag.ConfigurableResource):
+class PostgresqlResource(dag.ConfigurableResource, ResourceRequiringDBConnection):
     """
     The bare-basic peewee connection to pass onto peewee models.
 

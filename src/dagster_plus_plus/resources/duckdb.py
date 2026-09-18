@@ -1,5 +1,6 @@
 """DuckDB connectivity resources."""
 
+from pathlib import Path
 from typing import Any
 
 import dagster as dag
@@ -11,13 +12,14 @@ from dagster_plus_plus.core.data_store import (
     BaseCache,
     BaseIODataStore,
     IOKey,
+    ResourceRequiringDBConnection,
 )
 
 
-class DuckDbResource(dag.ConfigurableResource):
+class DuckDbResource(dag.ConfigurableResource, ResourceRequiringDBConnection):
     """Allows connection to some duckdb resource."""
 
-    database: str = Field(default=":memory:")
+    database: str = Field(default=str(Path.cwd() / "dagplusplus.db"))
     read_only: bool = Field(default=False)
 
     def create_resource(self, _) -> duckdb.DuckDBPyConnection:

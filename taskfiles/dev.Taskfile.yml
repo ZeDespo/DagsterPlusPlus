@@ -25,6 +25,12 @@ tasks:
         dir: documentation/
         deps:
           - install
+    env-file:
+        cmd: cp template.env .env
+        desc: Create the .env file from the template for testing.
+        dir: deployment/local
+        preconditions:
+          - ls .env
     get-uv:
         cmd: curl -LsSf https://astral.sh/uv/install.sh | sh
         desc: Download and install UV, the package manager.
@@ -66,10 +72,11 @@ tasks:
         cmd: uv sync --all-extras
         desc: Install all python dependencies with uv
     test:
-        cmd: uv run pytest tests/unit {{.CLI_ARGS}}
+        cmds:
+          - uv run pytest tests/unit {{.CLI_ARGS}}
         desc: Run tests
         dotenv:
-          - deployment/local/.env
+          - .
     test-integration:
         cmds:
           - defer:
@@ -78,4 +85,4 @@ tasks:
           - uv run pytest tests/integration {{.CLI_ARGS}}
         desc: Run tests that depend on other resources.
         dotenv:
-          - .env
+          - deployment/local/.env
