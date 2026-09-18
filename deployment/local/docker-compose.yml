@@ -1,0 +1,29 @@
+---
+services:
+    # The postgres DB used by Dagster for run storage, schedule storage, and event log storage.
+    postgres:
+        image: docker.io/bitnami/postgresql
+        container_name: postgres-dag-dev
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: ${DAGSTER_POSTGRES_USER:?.env not set up correctly}
+            POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?.env not set up correctly}
+            POSTGRES_DB: ${DAGSTER_POSTGRES_NAME:?.env not set up correctly}
+            POSTGRES_INITDB_ARGS: --encoding='UTF-8'
+        ports:
+          - 5432:5432
+        networks:
+          - dag-network
+        healthcheck:
+            test:
+              - CMD-SHELL
+              - pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB
+            interval: 30s
+            timeout: 5s
+            retries: 5
+            start_period: 5s
+
+networks:
+    dag-network:
+        driver: bridge
+        name: dag-network

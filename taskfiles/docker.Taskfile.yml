@@ -1,0 +1,10 @@
+---
+version: '3'
+
+tasks:
+    start-local-services:
+        cmd: docker compose -f deployment/local/docker-compose.yml up -d --wait
+        desc: Start the necessary services to run a local version of dagster.
+    stop-local-services:
+        cmd: docker compose -f deployment/local/docker-compose.yml down
+        desc: Stop all docker services for a local dagster deployment.

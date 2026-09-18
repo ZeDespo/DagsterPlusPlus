@@ -1,0 +1,27 @@
+---
+version: '3'
+
+vars:
+    PROJECT:
+        sh: basename $PWD
+
+includes:
+    dev: ./taskfiles/dev.Taskfile.yml
+    docker: ./taskfiles/docker.Taskfile.yml
+
+tasks:
+    make-env-files:
+        cmds:
+          - cp .env.template deployment/docker/.env
+          - cp .env.template deployment/local/.env
+          - sed -i '' "s/DAGSTER_POSTGRES_HOST.*/DAGSTER_POSTGRES_HOST=0.0.0.0/" deployment/local/.env
+          - sed -i '' "s/DAGSTER_REDIS_HOST.*/DAGSTER_REDIS_HOST=0.0.0.0/" deployment/local/.env
+          - sed -i '' "s/DAGSTER_RABBITMQ_HOST.*/DAGSTER_RABBITMQ_HOST=0.0.0.0/" deployment/local/.env
+          - sed -i '' "s/DAGSTER_HOME.*/DAGSTER_HOME={{.PWD}}\/deployment\/local/" deployment/local/.env
+          - sed -i '' "s/DAGSTER_FILESYSTEM_MOUNT.*/DAGSTER_FILESYSTEM_MOUNT={{.PWD}}\/deployment\/local\/filesystem_mount/"
+            deployment/local/.env
+          - sed -i '' "s/DAGSTER_/export DAGSTER_/" deployment/local/.env
+        desc: Create .env files for all deployments from the template files.
+        vars:
+            PWD:
+                sh: echo $PWD | sed 's/\//\\\//g'

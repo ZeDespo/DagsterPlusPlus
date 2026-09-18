@@ -1,0 +1,39 @@
+---
+run_coordinator:
+    class: QueuedRunCoordinator
+    module: dagster.core.run_coordinator
+    config:
+        max_concurrent_runs: 50
+
+run_monitoring:
+    enabled: true
+    max_runtime_seconds: 3600
+
+storage:
+    postgres:
+        postgres_db:
+            username:
+                env: DAGSTER_POSTGRES_USER
+            password:
+                env: DAGSTER_POSTGRES_PASSWORD
+            hostname:
+                env: DAGSTER_POSTGRES_HOST
+            db_name:
+                env: DAGSTER_POSTGRES_NAME
+            port:
+                env: DAGSTER_POSTGRES_PORT
+
+telemetry:
+    enabled: false
+
+retention:
+    schedule:
+        purge_after_days: 30
+    sensor:
+        purge_after_days:
+            skipped: 7
+            failure: 7
+            success: 7
+
+auto_materialize:
+    enabled: true
